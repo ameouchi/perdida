@@ -525,7 +525,20 @@
 <script>
 (async function(){
 
-  const DIR = "files/";
+  // Ruta base para archivos - detecta automáticamente la ruta base
+  const getBaseDir = () => {
+    // Si estamos en GitHub Pages, la ruta puede incluir el nombre del repo
+    const path = window.location.pathname;
+    // Remover index.html si está presente
+    const cleanPath = path.replace(/\/index\.html$/, '');
+    // Si hay un subdirectorio (ej: /perdida/), incluirlo
+    if (cleanPath && cleanPath !== '/') {
+      return cleanPath + (cleanPath.endsWith('/') ? '' : '/') + 'files/';
+    }
+    // Si estamos en la raíz, usar ruta relativa
+    return './files/';
+  };
+  const DIR = getBaseDir();
   const HERMOSILLO_CODE = "M26.02";
 
   const MEXICALI_CODE = "M02.02";
@@ -756,6 +769,34 @@
   });
 
   async function listGeojson(dir){
+    // Primero intentar cargar desde manifest.json (funciona en GitHub Pages)
+    try{
+      const manifestRes = await fetch(dir + "manifest.json", {cache:"no-store"});
+      if(manifestRes.ok){
+        const manifest = await manifestRes.json();
+        // Extraer los nombres de archivos del manifest
+        const files = manifest
+          .filter(item => {
+            if(!item.codigo || item.codigo === "N/A") return false;
+            // Filtrar códigos con formato especial (ej: "M21.01 (combinado con...)")
+            const cleanCode = item.codigo.split(" ")[0].trim();
+            return /^M\d+\.\d+$/.test(cleanCode);
+          })
+          .map(item => {
+            // Extraer solo el código limpio (antes del espacio si hay texto adicional)
+            const cleanCode = item.codigo.split(" ")[0].trim();
+            return `${cleanCode}.geojson`;
+          })
+          .filter((file, index, self) => self.indexOf(file) === index) // Remover duplicados
+          .sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+        console.log(`Loaded ${files.length} files from manifest.json`);
+        return files;
+      }
+    }catch(e){
+      console.warn("Could not load manifest.json, trying directory listing:", e);
+    }
+    
+    // Fallback: intentar listar directorio (solo funciona localmente)
     try{
       const res = await fetch(dir,{cache:"no-store"});
       if(!res.ok) return [];
