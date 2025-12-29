@@ -527,18 +527,31 @@
 
   // Ruta base para archivos - detecta automáticamente la ruta base
   const getBaseDir = () => {
-    // Si estamos en GitHub Pages, la ruta puede incluir el nombre del repo
     const path = window.location.pathname;
+    const hostname = window.location.hostname;
+    
     // Remover index.html si está presente
-    const cleanPath = path.replace(/\/index\.html$/, '');
-    // Si hay un subdirectorio (ej: /perdida/), incluirlo
-    if (cleanPath && cleanPath !== '/') {
-      return cleanPath + (cleanPath.endsWith('/') ? '' : '/') + 'files/';
+    let cleanPath = path.replace(/\/index\.html$/, '');
+    
+    // Si no termina con /, agregarlo
+    if (cleanPath && !cleanPath.endsWith('/')) {
+      cleanPath += '/';
     }
-    // Si estamos en la raíz, usar ruta relativa
-    return './files/';
+    
+    // Si estamos en la raíz (/), usar ruta relativa
+    if (cleanPath === '/' || cleanPath === '') {
+      const dir = './files/';
+      console.log(`📍 At root. Using DIR: ${dir}`);
+      return dir;
+    }
+    
+    // Si hay un subdirectorio (ej: /perdida/), incluirlo
+    const dir = cleanPath + 'files/';
+    console.log(`📍 Detected subdirectory: ${cleanPath}. Using DIR: ${dir}`);
+    return dir;
   };
   const DIR = getBaseDir();
+  console.log(`📂 Base directory for files: ${DIR} (from pathname: ${window.location.pathname})`);
   const HERMOSILLO_CODE = "M26.02";
 
   const MEXICALI_CODE = "M02.02";
@@ -770,8 +783,9 @@
 
   async function listGeojson(dir){
     // Primero intentar cargar desde manifest.json (funciona en GitHub Pages)
+    const manifestUrl = dir + "manifest.json";
     try{
-      const manifestRes = await fetch(dir + "manifest.json", {cache:"no-store"});
+      const manifestRes = await fetch(manifestUrl, {cache:"no-store"});
       if(manifestRes.ok){
         const manifest = await manifestRes.json();
         // Extraer los nombres de archivos del manifest
@@ -789,28 +803,42 @@
           })
           .filter((file, index, self) => self.indexOf(file) === index) // Remover duplicados
           .sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
-        console.log(`Loaded ${files.length} files from manifest.json`);
+        console.log(`✅ Loaded ${files.length} files from manifest.json`);
         return files;
+      } else {
+        console.warn(`⚠️ manifest.json not found (${manifestRes.status}). URL: ${manifestUrl}`);
       }
     }catch(e){
-      console.warn("Could not load manifest.json, trying directory listing:", e);
+      console.warn("⚠️ Could not load manifest.json:", e.message);
     }
     
-    // Fallback: intentar listar directorio (solo funciona localmente)
-    try{
-      const res = await fetch(dir,{cache:"no-store"});
-      if(!res.ok) return [];
-      const html = await res.text();
-      const doc = new DOMParser().parseFromString(html,"text/html");
-      return Array.from(doc.querySelectorAll("a"))
-        .map(a=>a.getAttribute("href"))
-        .filter(Boolean)
-        .filter(h=>!h.endsWith("/"))
-        .filter(h=>/\.geojson$/i.test(h))
-        .map(h=>decodeURIComponent(h.split("/").pop()))
-        .sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
-    }catch(e){
-      console.error("Error listing geojson:", e);
+    // Fallback: intentar listar directorio (solo funciona localmente, no en GitHub Pages)
+    // Solo intentar si estamos en localhost o file:// protocol
+    const isLocal = window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if(isLocal){
+      try{
+        const res = await fetch(dir,{cache:"no-store"});
+        if(!res.ok) {
+          console.warn("⚠️ Directory listing not available");
+          return [];
+        }
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html,"text/html");
+        const files = Array.from(doc.querySelectorAll("a"))
+          .map(a=>a.getAttribute("href"))
+          .filter(Boolean)
+          .filter(h=>!h.endsWith("/"))
+          .filter(h=>/\.geojson$/i.test(h))
+          .map(h=>decodeURIComponent(h.split("/").pop()))
+          .sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+        console.log(`✅ Loaded ${files.length} files from directory listing`);
+        return files;
+      }catch(e){
+        console.error("❌ Error listing geojson directory:", e);
+        return [];
+      }
+    } else {
+      console.error("❌ Cannot list directory on GitHub Pages. Please ensure manifest.json exists at:", manifestUrl);
       return [];
     }
   }
