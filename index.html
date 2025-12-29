@@ -1,0 +1,2048 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <title>La Gran Pérdida — Story (Cap. 1–10)</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#ffffff;
+      --text:#0b0b10;
+      --muted:#5b6472;
+      --panel:#ffffff;
+      --border:rgba(0,0,0,.10);
+      --shadow: 0 14px 40px rgba(0,0,0,.12);
+
+      --accent:#0b5bd3;
+
+      --topbar-h:66px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bot: env(safe-area-inset-bottom, 0px);
+
+      --sheet-max-h: min(70svh, 1060px);
+      --sheet-peek: 88px;
+
+      --inforow-h: 40px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:"Work Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+    a{color:inherit}
+
+    .shell{width:100%;min-height:100vh;display:flex;flex-direction:column;}
+
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:20;
+      padding: calc(10px + var(--safe-top)) 12px 10px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      backdrop-filter: blur(10px);
+    }
+    .brandWrap{display:flex;flex-direction:column;gap:2px;line-height:1.05}
+    .brandTitle{font-weight:800;letter-spacing:.1px;font-size:18px;color:#000}
+    .brandSubtitle{color:rgba(0,0,0,.65);font-weight:600;font-size:12px;letter-spacing:.1px;max-width:min(720px, 92vw);}
+
+    .infoRow{
+      position:fixed;
+      top: calc(var(--topbar-h) + var(--safe-top) );
+      left:0;
+      right:0;
+      width:100vw;
+      z-index:19;
+      display:flex;
+      align-items:baseline;
+      justify-content:flex-start;
+      gap:4px;
+      flex-wrap:wrap;
+      backdrop-filter: blur(10px);
+      font-size:16px;
+      line-height:1.4;
+      padding-left:12px;
+      padding-right:12px;
+    }
+    .infoCity{
+      font-size:16px;
+      font-weight:800;
+      color:#000;
+      white-space:nowrap;
+      flex:0 0 100%;
+      width:100%;
+      transition: opacity 200ms ease;
+      margin-bottom:2px;
+    }
+    .infoCity.changing{
+      animation: textFade 400ms cubic-bezier(.2,.8,.2,1);
+    }
+    .infoText{
+      font-size:16px;
+      font-weight:400;
+      color:rgba(0,0,0,.75);
+      white-space:nowrap;
+      flex:0 0 auto;
+    }
+    .infoPeriod{
+      font-size:16px;
+      font-weight:700;
+      color:rgba(0,0,0,.75);
+      white-space:nowrap;
+      flex:0 0 auto;
+      transition: opacity 200ms ease;
+    }
+    .infoPeriod.changing{
+      animation: textFade 400ms cubic-bezier(.2,.8,.2,1);
+    }
+    .infoGain{
+      font-size:20px;
+      font-weight:900;
+      color:#10C7B4;
+      white-space:nowrap;
+      flex:0 0 auto;
+      transition: opacity 200ms ease;
+    }
+    .infoGain.changing{
+      animation: textFade 400ms cubic-bezier(.2,.8,.2,1);
+    }
+    .infoLoss{
+      font-size:20px;
+      font-weight:900;
+      color:#E85B4F;
+      white-space:nowrap;
+      flex:0 0 auto;
+      transition: opacity 200ms ease;
+    }
+    .infoLoss.changing{
+      animation: textFade 400ms cubic-bezier(.2,.8,.2,1);
+    }
+    @keyframes textFade{
+      0%{ opacity: 1; transform: translateY(0); }
+      50%{ opacity: 0.3; transform: translateY(-4px); }
+      100%{ opacity: 1; transform: translateY(0); }
+    }
+
+    #stage{
+      position:sticky;
+      top: 0; /* overridden in JS */
+      z-index:1;
+      height: 100svh; /* overridden in JS */
+      width:100%;
+      overflow:hidden;
+      background:
+        radial-gradient(1200px 700px at 50% 20%, rgba(11,91,211,.06), transparent 60%),
+        radial-gradient(900px 700px at 15% 70%, rgba(10,61,145,.05), transparent 55%),
+        #fff;
+    }
+
+    #viz{position:absolute; inset:0;}
+    #viz svg{width:100%;height:100%;display:block;background:transparent;touch-action:none;}
+
+    /* Bottom-sheet */
+    #mapBox{
+      position:fixed;
+      left:0;
+      right:0;
+      width:100vw;
+      bottom: calc(12px + var(--safe-bot));
+      z-index:15;
+      background:var(--panel);
+      box-shadow: var(--shadow);
+      height: var(--sheet-max-h);
+      transform: translateY(var(--sheetY, 0px));
+      will-change: transform;
+      transition: none;
+      overflow:hidden;
+    }
+    #mapBox.ready{transition: transform 240ms cubic-bezier(.2,.8,.2,1);}
+
+    .sheetHandle{
+      display:flex;align-items:center;justify-content:center;gap:10px;
+      padding:10px 12px 8px;user-select:none;-webkit-user-select:none;touch-action:none;cursor:grab;
+    }
+    .sheetHandle:active{cursor:grabbing}
+    .handleLeft{display:flex;align-items:center;gap:10px}
+    .pill{width:54px;height:6px;border-radius:999px;background:rgba(0,0,0,.22);}
+    .handleTitle{font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:rgba(0,0,0,.72);}
+    .handleHint{font-weight:600;font-size:11px;color:rgba(0,0,0,.60);white-space:nowrap;display:flex;align-items:center;gap:6px;opacity:.95;}
+    .chev{width:10px;height:10px;border-right:2px solid rgba(0,0,0,.55);border-top:2px solid rgba(0,0,0,.55);transform: rotate(-45deg);margin-top:2px;}
+
+    .sheetContent{padding:10px 12px 12px;height: calc(100% - 44px);overflow:auto;-webkit-overflow-scrolling: touch;background:#fff;}
+
+    #mapBox .kicker{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(0,0,0,.55);font-weight:800;margin: 0 0 6px;}
+    #mapBox .headline{font-size:18px;line-height:1.15;font-weight:800;margin:0 0 8px 0;color:#000;}
+    #mapBox .sub{font-size:13px;line-height:1.35;color:rgba(0,0,0,.72);margin:0 0 10px 0;font-weight:400;}
+    #mapBox .long{margin:0;color:rgba(0,0,0,.75);font-size:13px;line-height:1.55;font-weight:400;white-space:pre-wrap;}
+
+    .story{
+      position:relative;
+      z-index:2;
+      width:100%;
+      margin-top: calc(-1 * (60svh));
+      padding-top: calc(60svh + 12px);
+      padding-bottom: 90px;
+      pointer-events:none;
+    }
+    .steps{
+      width:100vw;
+      margin:0;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      padding-bottom: 60px;
+      pointer-events:none;
+    }
+    .step{
+      width:100vw;
+      position:relative;
+      z-index:2;
+      pointer-events:auto;
+      background:rgba(255,255,255,0);
+      backdrop-filter: blur(50px);
+      padding:12px;
+      margin-bottom: 52vh;
+    }
+    .step:last-child{ margin-bottom: 18vh; }
+    .step .title{font-weight:800;font-size:18px;margin:0 0 6px 0;letter-spacing:.15px;color:#ffffff;}
+    .step .body{margin:0;color:rgba(0,0,0,.78);font-size:13px;line-height:1.5;font-weight:400;}
+    .step .meta{margin-top:10px;color:rgba(0,0,0,.55);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+
+    .annoLine{stroke: var(--accent);stroke-width:2.5;stroke-linecap:round;opacity:.95;filter: drop-shadow(0 6px 10px rgba(0,0,0,.22));}
+    .annoDot{fill: var(--accent);opacity:.95;filter: drop-shadow(0 6px 10px rgba(0,0,0,.22));}
+    .annoLabel{fill:#000;font-weight:800;font-size:13px;paint-order: stroke;stroke: rgba(255,255,255,.9);stroke-width: 5px;stroke-linejoin: round;}
+    .annoRing{fill:none;stroke:rgba(0,0,0,.55);stroke-width:2;opacity:.9;filter: drop-shadow(0 6px 10px rgba(0,0,0,.12));}
+    .annoRingLabel{fill:rgba(0,0,0,.80);font-weight:800;font-size:12px;paint-order: stroke;stroke: rgba(255,255,255,.92);stroke-width: 2px;stroke-linejoin: round;}
+
+    @media (max-width:420px){
+      #mapBox .headline{font-size:17px}
+      .step{ margin-bottom: 54vh; }
+      .brandSubtitle{font-size:11px}
+      .handleHint{display:none}
+      .infoCity{max-width: 100%; width:100%; font-size:14px;}
+      .infoRow{font-size:14px;}
+      .infoText{font-size:14px;}
+      .infoPeriod{font-size:14px;}
+      .infoGain{font-size:16px;}
+      .infoLoss{font-size:16px;}
+    }
+  </style>
+</head>
+
+<body>
+<div class="shell">
+
+  <div class="topbar" id="topbar">
+    <div class="brandWrap">
+      <div class="brandTitle">La Gran Pérdida</div>
+      <div class="brandSubtitle">éxodo poblacional y dinámicas de 70 centros urbanos en México</div>
+    </div>
+  </div>
+
+  <div class="infoRow" aria-label="Ciudad y periodo" id="infoRow">
+    <span class="infoCity" id="uiCity">Todas las zonas metropolitanas</span>
+    <span class="infoText" id="uiVerbGain">aumentaron</span>
+    <span class="infoGain" id="uiGain">0</span>
+    <span class="infoText">habitantes de 1990 a</span>
+    <span class="infoPeriod" id="uiPeriod">2000</span>
+    <span class="infoText" id="uiVerbLoss">pero perdieron</span>
+    <span class="infoLoss" id="uiLoss">0</span>
+    <span class="infoText" id="uiLocation">en zonas centrales</span>
+  </div>
+
+  <section id="stage" aria-label="Mapa">
+    <div id="viz"></div>
+
+    <div id="mapBox" role="note" aria-label="Texto sobre el mapa">
+      <div class="sheetHandle" id="sheetHandle" aria-label="Desliza para abrir">
+        <div class="handleLeft">
+          <div class="pill" aria-hidden="true"></div>
+        </div>
+        <div class="handleHint"><span>Desliza</span><span class="chev" aria-hidden="true"></span></div>
+      </div>
+
+      <div class="sheetContent" id="sheetContent">
+        <div class="kicker" id="boxKicker">Capítulo 1</div>
+        <h2 class="headline" id="boxHeadline">Todas las ciudades en México están perdiendo población en las zonas centrales</h2>
+        <p class="sub" id="boxSub">A primera vista, las ciudades mexicanas están más vivas que nunca. Entre los años 1990 y 2020, su población aumentó el doble, su extensión urbana se extendió y con ello sus avenidas se llenaron de autos y comercios. Sin embargo, detrás de ese dinamismo aparente se esconde un fenómeno menos visible, pues mientras se expandían, sus centros perdían habitantes. Aunque la actividad no desapareció del centro, pues aún hoy en día se concentran ahí comercios, oficinas, escuelas y servicios, su vocación habitacional se fue debilitando con el tiempo. Devinieron en zonas que permanecen activas durante el día, pero que por la noche se apagan, sugiriendo que son altamente visitadas, más no habitadas. La paradoja es que, generalmente, estas mismas zonas centrales abandonadas tienen las mejores dotaciones de equipamiento público y de acceso a transporte.
+          Este vaciamiento no es un simple efecto secundario del crecimiento urbano, pues los centros de las ciudades mexicanas no perdieron población por azar ni por un desplazamiento espontáneo de sus residentes. Lo que ocurrió fue un proceso sistemático, inducido, resultado de decisiones de mercado, omisiones institucionales y, sobre todo, de la falta de una política de vivienda que promoviera opciones asequibles en esas áreas. Aunque este estudio no se centra en las causas, sí muestra con claridad que el fenómeno responde a dinámicas más amplias que la simple expansión territorial.
+        </p>
+        <p class="long" id="boxLong" style="display:none;"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="story">
+    <div class="steps" id="steps">
+
+      <article class="step" data-action="c1-s1">
+        <div>
+          <h3 class="title">Las ciudades pierden población en áreas centrales.</h3>
+          <p class="body">De las 70 ciudades analizadas, todas ellas muestran el mismo patrón. Estas son todas las ciudades. Cada puntitio representa una celda poblacional. Cuando las celdas <b style="color: #10C7B4;">ganan población son verdes, </b> cuando <b style="color: #E85B4F;"> pierden población, son rojas. </b> </p>
+          <div class="meta">Capítulo 1 · Paso 1/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c1-s2">
+        <div>
+          <h3 class="title">1) 1990 → 2010</h3>
+          <p class="body">El fenómeno no es aislado: en la mayoría de las ciudades el centro pierde mientras las orillas ganan.</p>
+          <div class="meta">Capítulo 1 · Paso 2/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c1-s3">
+        <div>
+          <h3 class="title">1) 1990 → 2020</h3>
+          <p class="body">Treinta años después, el vaciamiento central se vuelve estructural y comparable entre ciudades.</p>
+          <div class="meta">Capítulo 1 · Paso 3/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c2-s1">
+        <div>
+          <h3 class="title">2) ¿Cómo llegamos a esto?</h3>
+          <p class="body">Hermosillo como ejemplo: la ciudad crece hacia afuera y la vida cotidiana se aleja.</p>
+          <div class="meta">Capítulo 2 · Paso 1/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c2-s2">
+        <div>
+          <h3 class="title">2) Flechas: dirección del crecimiento</h3>
+          <p class="body">La mancha urbana se extiende hacia la periferia: más distancia, más costo, menos centro.</p>
+          <div class="meta">Capítulo 2 · Paso 2/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c2-s3">
+        <div>
+          <h3 class="title">2) Se repite en todo el país</h3>
+          <p class="body">Lo importante no es Hermosillo: es que la misma lógica se repite en muchas ciudades mexicanas.</p>
+          <div class="meta">Capítulo 2 · Paso 3/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c3-s1">
+        <div>
+          <h3 class="title">3) Sprawl → pérdida en el centro</h3>
+          <p class="body">El sprawl nos lleva a perder población en el centro (visual: flechas y “centro” en Hermosillo).</p>
+          <div class="meta">Capítulo 3 · Paso 1/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c3-s2">
+        <div>
+          <h3 class="title">c3-s2</h3>
+          <p class="body">El sprawl nos lleva a perder población en el centro (visual: flechas y “centro” en Hermosillo).</p>
+          <div class="meta">Capítulo 3 · Paso 2/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c3-s3">
+        <div>
+          <h3 class="title">c3-s3</h3>
+          <p class="body">El sprawl nos lleva a perder población en el centro (visual: flechas y “centro” en Hermosillo).</p>
+          <div class="meta">Capítulo 3 · Paso 3/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c4-s1">
+        <div>
+          <h3 class="title">4) Metodología</h3>
+          <p class="body">Círculos concéntricos: centro, zona central, intermedia y lejana (Hermosillo).</p>
+          <div class="meta">Capítulo 4 · Paso 1/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c4-s2">
+        <div>
+          <h3 class="title">4) Metodología - Paso 2</h3>
+          <p class="body">Placeholder para paso 2 del capítulo 4.</p>
+          <div class="meta">Capítulo 4 · Paso 2/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c4-s3">
+        <div>
+          <h3 class="title">4) Metodología - Paso 3</h3>
+          <p class="body">Placeholder para paso 3 del capítulo 4.</p>
+          <div class="meta">Capítulo 4 · Paso 3/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c5-s1">
+        <div>
+          <h3 class="title">5) El tamaño de la pérdida</h3>
+          <p class="body">2.5 millones de personas: equivalente a Hermosillo + La Paz + Chetumal + Colima + Mazatlán (juntas).</p>
+          <div class="meta">Capítulo 5 · Paso 1/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c5-s2">
+        <div>
+          <h3 class="title">5) El tamaño de la pérdida - Paso 2</h3>
+          <p class="body">Placeholder para paso 2 del capítulo 5.</p>
+          <div class="meta">Capítulo 5 · Paso 2/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c5-s3">
+        <div>
+          <h3 class="title">5) El tamaño de la pérdida - Paso 3</h3>
+          <p class="body">Placeholder para paso 3 del capítulo 5.</p>
+          <div class="meta">Capítulo 5 · Paso 3/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c6-s1">
+        <div>
+          <h3 class="title">6) Caso: Mexicali</h3>
+          <p class="body">Zoom a Mexicali y texto con pérdida en zona central (XX).</p>
+          <div class="meta">Capítulo 6 · Paso 1/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c6-s2">
+        <div>
+          <h3 class="title">6) Caso: Mexicali - Paso 2</h3>
+          <p class="body">Placeholder para paso 2 del capítulo 6.</p>
+          <div class="meta">Capítulo 6 · Paso 2/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c6-s3">
+        <div>
+          <h3 class="title">6) Caso: Mexicali - Paso 3</h3>
+          <p class="body">Placeholder para paso 3 del capítulo 6.</p>
+          <div class="meta">Capítulo 6 · Paso 3/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c7-s1">
+        <div>
+          <h3 class="title">7) Caso: Guadalajara (zona intermedia)</h3>
+          <p class="body">Highlight de zonas intermedias (XX) + total nacional (XXX).</p>
+          <div class="meta">Capítulo 7 · Paso 1/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c7-s2">
+        <div>
+          <h3 class="title">7) Caso: Guadalajara - Paso 2</h3>
+          <p class="body">Placeholder para paso 2 del capítulo 7.</p>
+          <div class="meta">Capítulo 7 · Paso 2/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c7-s3">
+        <div>
+          <h3 class="title">7) Caso: Guadalajara - Paso 3</h3>
+          <p class="body">Placeholder para paso 3 del capítulo 7.</p>
+          <div class="meta">Capítulo 7 · Paso 3/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c8-s1">
+        <div>
+          <h3 class="title">8) Caso: CDMX (zona lejana)</h3>
+          <p class="body">Highlight de zonas lejanas (XX) + total nacional (XXX).</p>
+          <div class="meta">Capítulo 8 · Paso 1/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c8-s2">
+        <div>
+          <h3 class="title">8) Caso: CDMX - Paso 2</h3>
+          <p class="body">Placeholder para paso 2 del capítulo 8.</p>
+          <div class="meta">Capítulo 8 · Paso 2/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c8-s3">
+        <div>
+          <h3 class="title">8) Caso: CDMX - Paso 3</h3>
+          <p class="body">Placeholder para paso 3 del capítulo 8.</p>
+          <div class="meta">Capítulo 8 · Paso 3/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c9-s1">
+        <div>
+          <h3 class="title">9) Pérdida de densidad</h3>
+          <p class="body">Mapa TBD (placeholder).</p>
+          <div class="meta">Capítulo 9 · Paso 1/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c9-s2">
+        <div>
+          <h3 class="title">9) Pérdida de densidad - Paso 2</h3>
+          <p class="body">Placeholder para paso 2 del capítulo 9.</p>
+          <div class="meta">Capítulo 9 · Paso 2/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c9-s3">
+        <div>
+          <h3 class="title">9) Pérdida de densidad - Paso 3</h3>
+          <p class="body">Placeholder para paso 3 del capítulo 9.</p>
+          <div class="meta">Capítulo 9 · Paso 3/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c10-s1">
+        <div>
+          <h3 class="title">10) ¿Por qué importa? (Call to action)</h3>
+          <p class="body">Mapa TBD (placeholder).</p>
+          <div class="meta">Capítulo 10 · Paso 1/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c10-s2">
+        <div>
+          <h3 class="title">10) ¿Por qué importa? - Paso 2</h3>
+          <p class="body">Placeholder para paso 2 del capítulo 10.</p>
+          <div class="meta">Capítulo 10 · Paso 2/3</div>
+        </div>
+      </article>
+
+      <article class="step" data-action="c10-s3">
+        <div>
+          <h3 class="title">10) ¿Por qué importa? - Paso 3</h3>
+          <p class="body">Placeholder para paso 3 del capítulo 10.</p>
+          <div class="meta">Capítulo 10 · Paso 3/3</div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+</div>
+
+<script src="./d3.v7.min.js"></script>
+<script>
+(async function(){
+
+  const DIR = "geojson/";
+  const HERMOSILLO_CODE = "M26.02";
+
+  const MEXICALI_CODE = "M02.02";
+  const GUADALAJARA_CODE = "M14.01";
+  const CDMX_CODE = "M09.01";
+
+  const PERIODS = [
+    {key:"difference_1990_2000", label:"1990 → 2000"},
+    {key:"difference_1990_2010", label:"1990 → 2010"},
+    {key:"difference_1990_2020", label:"1990 → 2020"}
+  ];
+
+  const SPEED = 0.95;
+  const ms = n => Math.max(1, Math.round(n * SPEED));
+  const TRANSITION_MS = ms(900);
+  const ZOOM_MS = ms(2550);
+
+  const TARGET_FILL_TILE=0.28;
+
+  // ===== Color + size tuning (shades of red for loss, shades of green for gain) =====
+  const LOSS_COLOR_LIGHT = "#F5C2BC";
+  const LOSS_COLOR_DARK  = "#E85B4F";
+  const GAIN_COLOR_LIGHT = "#7DD3C0";
+  const GAIN_COLOR_DARK  = "#0A8B7A";
+
+  const NEG_GAIN = 2.2;
+
+  const SIZE_FACTOR_NEG = 5.2;
+  const SIZE_FACTOR_POS = 2.6;
+
+  const SIZE_MIN = 1.05;
+  const SIZE_MAX = 1.18;
+
+  const POS_SIZE_MULT = 0.45;
+  const NEG_SIZE_MULT = 0.70;
+
+  const boxKicker  = document.getElementById("boxKicker");
+  const boxHeadline= document.getElementById("boxHeadline");
+  const boxSub     = document.getElementById("boxSub");
+  const boxLong    = document.getElementById("boxLong");
+
+  const uiCity   = document.getElementById("uiCity");
+  const uiPeriod = document.getElementById("uiPeriod");
+  const uiGain   = document.getElementById("uiGain");
+  const uiLoss   = document.getElementById("uiLoss");
+  const uiVerbGain = document.getElementById("uiVerbGain");
+  const uiVerbLoss = document.getElementById("uiVerbLoss");
+  const uiLocation = document.getElementById("uiLocation");
+
+  function calculateGainLoss(cityCode, periodIndex){
+    if(!state.tiles.length || periodIndex < 0 || periodIndex >= PERIODS.length) {
+      return {gain: 0, loss: 0};
+    }
+
+    const key = PERIODS[periodIndex].key;
+    let totalGain = 0;
+    let totalLoss = 0;
+
+    const layout = state.matrixLayout || computeMatrixLayout();
+    const {tileW, tileH} = layout;
+
+    if(cityCode === "ALL"){
+      state.tiles.forEach(tile => {
+        if(!tile.centroids) extractCentroidsForTile(tile, tileW, tileH);
+        if(!tile.centroids) return;
+        tile.centroids.forEach(c => {
+          const v = raw(c, key);
+          if(v > 0) totalGain += v;
+          else if(v < 0) totalLoss += Math.abs(v);
+        });
+      });
+    } else {
+      const targetFile = `${cityCode}.geojson`;
+      const fileName = files.includes(targetFile) ? targetFile : files.find(f => f.includes(cityCode));
+      if(fileName){
+        const tileIndex = files.indexOf(fileName);
+        const tile = state.tiles[tileIndex];
+        if(tile){
+          if(!tile.centroids) extractCentroidsForTile(tile, tileW, tileH);
+          if(tile.centroids){
+            tile.centroids.forEach(c => {
+              const v = raw(c, key);
+              if(v > 0) totalGain += v;
+              else if(v < 0) totalLoss += Math.abs(v);
+            });
+          }
+        }
+      }
+    }
+
+    return {gain: Math.round(totalGain), loss: Math.round(totalLoss)};
+  }
+
+  function animateValue(element, newValue, prefix = ""){
+    const currentText = element.textContent;
+    const newText = prefix + newValue.toLocaleString();
+    if(currentText !== newText){
+      element.classList.remove("changing");
+      void element.offsetWidth;
+      element.textContent = newText;
+      element.classList.add("changing");
+      setTimeout(() => element.classList.remove("changing"), 400);
+    } else {
+      element.textContent = newText;
+    }
+  }
+
+  function setHeaderStatus(cityName, periodLabel, cityCode, periodIndex){
+    let endYear = "";
+    if(periodLabel){
+      const match = periodLabel.match(/→\s*(\d{4})/);
+      endYear = match ? match[1] : periodLabel.split("→").pop().trim();
+    }
+
+    const isAllCities = cityCode === "ALL";
+
+    if(cityName){
+      const currentCity = uiCity.textContent;
+      if(currentCity !== cityName){
+        uiCity.classList.remove("changing");
+        void uiCity.offsetWidth;
+        uiCity.textContent = cityName;
+        uiCity.classList.add("changing");
+        setTimeout(() => uiCity.classList.remove("changing"), 400);
+      } else {
+        uiCity.textContent = cityName;
+      }
+
+      uiCity.style.flexBasis = "100%";
+      uiCity.style.width = "100%";
+      uiCity.style.marginBottom = "2px";
+    }
+
+    if(isAllCities){
+      uiVerbGain.textContent = "aumentaron";
+      uiVerbLoss.textContent = "pero perdieron";
+      uiLocation.textContent = "en zonas centrales";
+    } else {
+      uiVerbGain.textContent = "Aumentó";
+      uiVerbLoss.textContent = "pero perdió";
+      uiLocation.textContent = "habitantes en zona central";
+    }
+
+    if(endYear){
+      const currentPeriod = uiPeriod.textContent;
+      if(currentPeriod !== endYear){
+        uiPeriod.classList.remove("changing");
+        void uiPeriod.offsetWidth;
+        uiPeriod.textContent = endYear;
+        uiPeriod.classList.add("changing");
+        setTimeout(() => uiPeriod.classList.remove("changing"), 400);
+      } else {
+        uiPeriod.textContent = endYear;
+      }
+    }
+
+    if(cityCode !== undefined && periodIndex !== undefined && cityCode !== null && periodIndex !== null){
+      const {gain, loss} = calculateGainLoss(cityCode, periodIndex);
+      animateValue(uiGain, gain, "");
+      animateValue(uiLoss, loss, "");
+    }
+  }
+
+  function setBox(chapter, headline, sub, longText){
+    boxKicker.textContent = chapter || "";
+    boxHeadline.textContent = headline || "";
+    boxSub.textContent = sub || "";
+    if(longText && longText.trim()){
+      boxLong.style.display = "block";
+      boxLong.textContent = longText;
+    }else{
+      boxLong.style.display = "none";
+      boxLong.textContent = "";
+    }
+  }
+
+  const raw = (d,key)=> key==="difference_1990_2000"? d.p00 : key==="difference_1990_2010"? d.p10 : d.p20;
+  const biasNeg = (v, k = NEG_GAIN) => (v < 0 ? v * k : v);
+
+  function makeColor(domain){
+    const [min, zero, max] = domain;
+    const lossScale = d3.scaleSequential()
+      .domain([min, zero])
+      .interpolator(d3.interpolateRgb(LOSS_COLOR_LIGHT, LOSS_COLOR_DARK));
+    const gainScale = d3.scaleSequential()
+      .domain([zero, max])
+      .interpolator(d3.interpolateRgb(GAIN_COLOR_LIGHT, GAIN_COLOR_DARK));
+    return (value) => (value < 0 ? lossScale(value) : gainScale(value));
+  }
+
+  function makeSizeScale(domain){
+    return d3.scaleLinear()
+      .domain(domain)
+      .range([0.35, 1.0, 1.25])
+      .clamp(true);
+  }
+
+  const baseSizeForCity=(n,w,h,target,minPx,maxPx)=>
+    !n?minPx:Math.max(minPx,Math.min(maxPx,Math.sqrt((target*w*h)/n)));
+
+  function calculateCellSize(numCentroids, viewportW, viewportH, zoomLevel, targetFill = 0.28, minPx = 2.5, maxPx = 12){
+    const effectiveW = viewportW / zoomLevel;
+    const effectiveH = viewportH / zoomLevel;
+    const baseSize = baseSizeForCity(numCentroids, effectiveW, effectiveH, targetFill, minPx, maxPx);
+    return baseSize * zoomLevel;
+  }
+
+  function mortonKey(x,y,w,h){
+    const xi=Math.max(0,Math.min(1023,Math.floor((x/w)*1023)));
+    const yi=Math.max(0,Math.min(1023,Math.floor((y/h)*1023)));
+    let z=0;
+    for(let i=0;i<10;i++){
+      z|=((xi>>i)&1)<<(2*i+1);
+      z|=((yi>>i)&1)<<(2*i);
+    }
+    return z;
+  }
+  function orderCentroids(arr,w,h){
+    arr.forEach(d=> d._k = mortonKey(d.x,d.y,w,h));
+    arr.sort((a,b)=>a._k-b._k);
+    arr.forEach((d,i)=> d._id = i);
+    return arr;
+  }
+
+  const viewport = () => ({
+    w: window.innerWidth,
+    h: document.getElementById("stage").clientHeight
+  });
+
+  async function listGeojson(dir){
+    try{
+      const res = await fetch(dir,{cache:"no-store"});
+      if(!res.ok) return [];
+      const html = await res.text();
+      const doc = new DOMParser().parseFromString(html,"text/html");
+      return Array.from(doc.querySelectorAll("a"))
+        .map(a=>a.getAttribute("href"))
+        .filter(Boolean)
+        .filter(h=>!h.endsWith("/"))
+        .filter(h=>/\.geojson$/i.test(h))
+        .map(h=>decodeURIComponent(h.split("/").pop()))
+        .sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+    }catch(e){
+      console.error("Error listing geojson:", e);
+      return [];
+    }
+  }
+
+  const files = await listGeojson(DIR);
+
+  const CITY_LABEL = {
+    "ALL":"Todas las zonas metropolitanas",
+    [HERMOSILLO_CODE]:"Hermosillo",
+    [MEXICALI_CODE]:"Mexicali",
+    [GUADALAJARA_CODE]:"Guadalajara",
+    [CDMX_CODE]:"Ciudad de México"
+  };
+
+  const viz = d3.select("#viz");
+  const svg = viz.append("svg");
+  const camera = svg.append("g").attr("class","camera");
+  const layer  = camera.append("g").attr("class","cells");
+  const anno   = svg.append("g").attr("class","annoScreen");
+
+  const defs = svg.append("defs");
+  defs.append("marker")
+    .attr("id", "arrowhead")
+    .attr("viewBox", "0 0 10 10")
+    .attr("refX", 8)
+    .attr("refY", 5)
+    .attr("markerWidth", 8)
+    .attr("markerHeight", 8)
+    .attr("orient", "auto")
+    .append("path")
+    .attr("d", "M 0 0 L 10 5 L 0 10 z")
+    .attr("fill", "var(--accent)");
+
+  function clearAnno(){ anno.selectAll("*").remove(); }
+
+  function setViewBox(){
+    const {w,h} = viewport();
+    svg.attr("viewBox", [0,0,w,h]);
+  }
+  setViewBox();
+
+  const topbarEl = document.getElementById("topbar");
+  const stageEl = document.getElementById("stage");
+  function syncStageToTopbar(){
+    const topbarRect = topbarEl.getBoundingClientRect();
+    const top = topbarRect.height;
+    stageEl.style.top = `${top}px`;
+    stageEl.style.height = `calc(100svh - ${top}px)`;
+  }
+  syncStageToTopbar();
+
+  const state = {
+    mode:"intro",
+    periodIndex:0,
+    tilesBuilt:false,
+    tiles:[],
+    matrixLayout:null,
+    cam:{tx:0,ty:0,k:1},
+    currentCityCode:"ALL",
+  };
+
+  let actionToken = 0;
+
+  function cancelAllAnimations(){
+    camera.interrupt();
+    layer.selectAll("*").interrupt();
+    anno.selectAll("*").interrupt();
+  }
+
+  function applyCam(tx,ty,k, animate=false, dur=ZOOM_MS){
+    const from = {...state.cam};
+    if(!animate){
+      state.cam = {tx,ty,k};
+      camera.interrupt();
+      camera.attr("transform", `translate(${tx},${ty}) scale(${k})`);
+      return Promise.resolve();
+    }
+    return new Promise(resolve=>{
+      const iTx = d3.interpolateNumber(from.tx, tx);
+      const iTy = d3.interpolateNumber(from.ty, ty);
+      const iK  = d3.interpolateNumber(from.k,  k);
+
+      camera.interrupt();
+      camera.transition()
+        .duration(dur)
+        .ease(d3.easeCubicInOut)
+        .attrTween("transform", ()=> t => `translate(${iTx(t)},${iTy(t)}) scale(${iK(t)})`)
+        .on("end", ()=>{
+          state.cam = {tx,ty,k};
+          resolve();
+        });
+    });
+  }
+
+  const MATRIX = { gap:6, pad:10, tileAspect:4/3 };
+
+  function computeMatrixLayout(){
+    const {w,h} = viewport();
+    const pad = MATRIX.pad, gap=MATRIX.gap;
+    const N = Math.max(1, files.length || 70);
+
+    const candidates = [10,9,8,7,6,5];
+    const MIN_TILE_W = Math.max(44, Math.min(70, w * 0.11));
+    let best=null;
+
+    for(const cols of candidates){
+      const rows = Math.ceil(N/cols);
+      const tileW = (w - pad*2 - gap*(cols-1))/cols;
+      if(tileW < MIN_TILE_W) continue;
+      const tileH = tileW / MATRIX.tileAspect;
+      const totalH = pad*2 + rows*tileH + gap*(rows-1);
+      const k = Math.min(1, h/totalH);
+      const score = (tileW*k) - (rows*6);
+      if(!best || score>best.score) best={cols,rows,tileW,tileH,pad,gap,k,score};
+    }
+
+    if(!best){
+      const cols=6;
+      const rows=Math.ceil(N/cols);
+      const tileW=(w-pad*2-gap*(cols-1))/cols;
+      const tileH=tileW/MATRIX.tileAspect;
+      const totalH=pad*2+rows*tileH+gap*(rows-1);
+      const k=Math.min(1,h/totalH);
+      best={cols,rows,tileW,tileH,pad,gap,k,score:0};
+    }
+    return best;
+  }
+
+  async function buildMatrixOnce(){
+    if(state.tilesBuilt || !files.length) return;
+    state.tilesBuilt=true;
+    state.tiles.length=0;
+    for(const name of files){
+      try{
+        const fc = await (await fetch(DIR+name,{cache:"no-store"})).json();
+        state.tiles.push({name, fc, centroids:null, domains:null});
+      }catch(e){
+        console.warn("Failed loading", name, e);
+      }
+    }
+  }
+
+  function extractCentroidsForTile(tile, tileW, tileH){
+    const proj = d3.geoMercator().fitSize([tileW,tileH], tile.fc);
+    const path = d3.geoPath(proj);
+
+    let centroids = tile.fc.features.map(f=>{
+      const c = path.centroid(f);
+      return { x:c[0], y:c[1],
+        p00:+((f.properties?.difference_1990_2000)??0),
+        p10:+((f.properties?.difference_1990_2010)??0),
+        p20:+((f.properties?.difference_1990_2020)??0)
+      };
+    }).filter(d=>Number.isFinite(d.x)&&Number.isFinite(d.y));
+
+    centroids = orderCentroids(centroids, tileW, tileH);
+
+    const domains={};
+    for(const p of PERIODS){
+      const vals = centroids.map(d => biasNeg(raw(d,p.key)));
+      const m = Math.max(Math.abs(d3.min(vals)||0), Math.abs(d3.max(vals)||0)) || 1;
+      domains[p.key]=[-m,0,m];
+    }
+    tile.centroids=centroids;
+    tile.domains=domains;
+  }
+
+  function renderMatrix(periodIndex, animate=true){
+    if(!state.tiles.length) return;
+
+    state.mode="matrix";
+    state.currentCityCode="ALL";
+    state.periodIndex = Math.max(0, Math.min(PERIODS.length-1, periodIndex));
+    clearAnno();
+
+    setHeaderStatus(CITY_LABEL.ALL, PERIODS[state.periodIndex].label, "ALL", state.periodIndex);
+
+    const layout = computeMatrixLayout();
+    state.matrixLayout = layout;
+
+    const {cols,tileW,tileH,pad,gap,k} = layout;
+    const {w,h} = viewport();
+    
+    // Add vertical offset to account for topbar and infoRow
+    const topOffset = 90; // Adjust this value to move grid down
+
+    applyCam((w*(1-k))/2, topOffset, k, false);
+
+    const key = PERIODS[state.periodIndex].key;
+
+    state.tiles.forEach(t=>{
+      if(!t.centroids) extractCentroidsForTile(t,tileW,tileH);
+    });
+
+    const rectData=[];
+    const {w: viewportW, h: viewportH} = viewport();
+    const currentZoom = state.cam.k || k;
+
+    state.tiles.forEach((t,i)=>{
+      const col=i%cols;
+      const row=Math.floor(i/cols);
+      const ox = pad + col*(tileW+gap);
+      const oy = pad + row*(tileH+gap);
+
+      const domain=t.domains[key];
+      const color=makeColor(domain);
+      const sizeBase=makeSizeScale(domain);
+
+      const numCentroids = t.centroids.length;
+      const adjustedTargetFill = numCentroids > 500 ? TARGET_FILL_TILE * 0.6 : TARGET_FILL_TILE;
+      const isZoomed = currentZoom > k * 1.2;
+      const baseSize = isZoomed
+        ? calculateCellSize(numCentroids, viewportW, viewportH, currentZoom, adjustedTargetFill * 0.6, 2.5, 14)
+        : baseSizeForCity(numCentroids, tileW, tileH, adjustedTargetFill, 4.5, 9);
+
+      for(const c of t.centroids){
+        const v = biasNeg(raw(c,key));
+        const base = sizeBase(v);
+
+        const factor = (v < 0) ? SIZE_FACTOR_NEG : SIZE_FACTOR_POS;
+        const mult   = (v < 0) ? NEG_SIZE_MULT   : POS_SIZE_MULT;
+
+        const amp = 1 + (base - 1) * factor;
+        const s = baseSize * mult * Math.max(SIZE_MIN, Math.min(SIZE_MAX, amp));
+
+        rectData.push({
+          id:`m-${i}-${c._id}`,
+          tileIndex:i,
+          x:ox + c.x - s/2,
+          y:oy + c.y - s/2,
+          w:s, h:s,
+          fill: color(v),
+          opacity:0.95
+        });
+      }
+    });
+
+    const sel = layer.selectAll("rect.cell").data(rectData, d=>d.id);
+    sel.exit().remove();
+
+    const t = d3.transition().duration(animate?TRANSITION_MS:0).ease(d3.easeCubicInOut);
+
+    sel.transition(t)
+      .attr("x", d=>d.x).attr("y", d=>d.y)
+      .attr("width", d=>d.w).attr("height", d=>d.h)
+      .attr("fill", d=>d.fill)
+      .attr("opacity", d=>d.opacity)
+      .attr("rx", d=>Math.max(1, Math.min(3, d.w * 0.15))).attr("ry", d=>Math.max(1, Math.min(3, d.h * 0.15)));
+
+    sel.enter().append("rect")
+      .attr("class","cell")
+      .attr("data-tile", d=>d.tileIndex)
+      .attr("rx", d=>Math.max(1, Math.min(3, d.w * 0.15))).attr("ry", d=>Math.max(1, Math.min(3, d.h * 0.15)))
+      .attr("x", d=>d.x).attr("y", d=>d.y)
+      .attr("width", d=>d.w).attr("height", d=>d.h)
+      .attr("fill", d=>d.fill)
+      .attr("opacity", d=>d.opacity);
+  }
+
+  function renderIntro(periodIndex, animate=true){
+    if(!state.tiles.length) return;
+
+    state.mode = "intro";
+    state.currentCityCode = "ALL";
+    state.periodIndex = Math.max(0, Math.min(PERIODS.length-1, periodIndex));
+    clearAnno();
+
+    setHeaderStatus(CITY_LABEL.ALL, PERIODS[state.periodIndex].label, "ALL", state.periodIndex);
+
+    // Add vertical offset to match grid position
+    const topOffset = 90; // Same offset as grid view
+    applyCam(0, topOffset, 1, false);
+
+    const layout = computeMatrixLayout();
+    state.matrixLayout = layout;
+    const {tileW, tileH} = layout;
+
+    const key = PERIODS[state.periodIndex].key;
+
+
+    state.tiles.forEach(t=>{
+      if(!t.centroids) extractCentroidsForTile(t, tileW, tileH);
+    });
+
+    const {w,h} = viewport();
+    const cx = w * 0.5;
+    const cy = h * 0.40;
+
+    const all = [];
+    for(let i=0;i<state.tiles.length;i++){
+      const t = state.tiles[i];
+      const domain = t.domains[key];
+      const color = makeColor(domain);
+      const sizeBase = makeSizeScale(domain);
+      const baseSize = baseSizeForCity(t.centroids.length, tileW, tileH, TARGET_FILL_TILE, 3.5, 10);
+
+      for(const c of t.centroids){
+        const v = biasNeg(raw(c, key));
+        const base = sizeBase(v);
+
+        const factor = (v < 0) ? SIZE_FACTOR_NEG : SIZE_FACTOR_POS;
+        const mult   = (v < 0) ? NEG_SIZE_MULT   : POS_SIZE_MULT;
+        const amp = 1 + (base - 1) * factor;
+        const s = baseSize * mult * Math.max(SIZE_MIN, Math.min(SIZE_MAX, amp));
+
+        all.push({
+          id:`m-${i}-${c._id}`,
+          tileIndex: i,
+          v,
+          w:s, h:s,
+          fill: color(v),
+          opacity: 0.95
+        });
+      }
+    }
+
+    const neg = all.filter(d => d.v < 0);
+    const pos = all.filter(d => d.v >= 0);
+
+    const R = Math.min(w,h);
+    const innerMax = R * 0.22;
+    const outerMin = innerMax + R*0.03;
+    const outerMax = R * 0.48;
+
+    const golden = Math.PI * (3 - Math.sqrt(5));
+
+    for(let i=0;i<neg.length;i++){
+      const t = i * golden;
+      const rn = Math.sqrt((i + 0.5) / Math.max(1, neg.length));
+      const r  = rn * innerMax;
+      neg[i].x = cx + r * Math.cos(t) - neg[i].w/2;
+      neg[i].y = cy + r * Math.sin(t) - neg[i].h/2;
+    }
+
+    for(let i=0;i<pos.length;i++){
+      const t = i * golden;
+      const rn = Math.sqrt((i + 0.5) / Math.max(1, pos.length));
+      const r  = outerMin + rn * (outerMax - outerMin);
+      pos[i].x = cx + r * Math.cos(t) - pos[i].w/2;
+      pos[i].y = cy + r * Math.sin(t) - pos[i].h/2;
+    }
+
+    const rectData = neg.concat(pos);
+
+    const sel = layer.selectAll("rect.cell").data(rectData, d=>d.id);
+    sel.exit().remove();
+
+    const tIntro = d3.transition().duration(animate ? TRANSITION_MS : 0).ease(d3.easeCubicInOut);
+
+    sel.transition(tIntro)
+      .attr("x", d=>d.x).attr("y", d=>d.y)
+      .attr("width", d=>d.w).attr("height", d=>d.h)
+      .attr("fill", d=>d.fill)
+      .attr("opacity", d=>d.opacity);
+
+    sel.enter().append("rect")
+      .attr("class","cell")
+      .attr("data-tile", d=>d.tileIndex)
+      .attr("rx", d=>Math.max(1, Math.min(3, d.w * 0.15))).attr("ry", d=>Math.max(1, Math.min(3, d.h * 0.15)))
+      .attr("x", d=>d.x).attr("y", d=>d.y)
+      .attr("width", d=>d.w).attr("height", d=>d.h)
+      .attr("fill", d=>d.fill)
+      .attr("opacity", d=>d.opacity);
+  }
+
+  function tileBounds(tileIndex){
+    const L = state.matrixLayout || computeMatrixLayout();
+    const {cols,tileW,tileH,pad,gap} = L;
+    const col = tileIndex % cols;
+    const row = Math.floor(tileIndex / cols);
+    const x0 = pad + col*(tileW+gap);
+    const y0 = pad + row*(tileH+gap);
+    return {x0,y0,x1:x0+tileW,y1:y0+tileH, tileW, tileH};
+  }
+
+  function zoomTransformToBoundsCentered(b, padding=18, zoomMultiplier=1.0){
+    const {w,h} = viewport();
+    const bw = (b.x1 - b.x0);
+    const bh = (b.y1 - b.y0);
+    const k = Math.min((w-2*padding)/bw, (h-2*padding)/bh) * zoomMultiplier;
+
+    const cx = b.x0 + bw/2;
+    const cy = b.y0 + bh/2;
+
+    const tx = (w/2) - cx*k;
+    const ty = (h/2) - cy*k;
+
+    return {tx,ty,k};
+  }
+
+  function findTileIndexForCode(code){
+    const targetFile = `${code}.geojson`;
+    const fileName =
+      files.includes(targetFile) ? targetFile :
+      files.find(f => f.includes(code));
+    if(!fileName) return -1;
+    return files.indexOf(fileName);
+  }
+
+  const isZoomedMode = () => (state.mode === "metroZoom" || state.mode === "hermosilloZoom");
+
+  function approxEqual(a,b,eps=0.75){ return Math.abs(a-b) <= eps; }
+  function camIsAt(z){
+    return approxEqual(state.cam.tx, z.tx) && approxEqual(state.cam.ty, z.ty) && approxEqual(state.cam.k, z.k, 0.02);
+  }
+
+  async function ensurePeriodNoJump(periodIdx){
+    periodIdx = Math.max(0, Math.min(PERIODS.length-1, periodIdx));
+    if(!state.tilesBuilt) await buildMatrixOnce();
+
+    if(state.periodIndex !== periodIdx){
+      state.periodIndex = periodIdx;
+      renderMatrix(periodIdx, true);
+      await new Promise(requestAnimationFrame);
+      return;
+    }
+
+    if(!state.matrixLayout) state.matrixLayout = computeMatrixLayout();
+
+    if(state.mode === "intro"){
+      renderMatrix(periodIdx, false);
+      await new Promise(requestAnimationFrame);
+      return;
+    }
+  }
+
+  // ✅ TRANSPARENCY GLITCH FIX:
+  // Hard-reset opacities synchronously before any transitions.
+  // This prevents "stuck faded" or "stuck zero" opacities when changing cities mid-transition.
+  function hardSetOpacities(targetTileIndex, focusOpacity=0.98, otherOpacity=0.08){
+    layer.selectAll("rect.cell")
+      .interrupt()
+      .attr("opacity", d => (d && d.tileIndex === targetTileIndex) ? focusOpacity : otherOpacity);
+  }
+
+  async function zoomToMetro(code, token){
+    cancelAllAnimations();
+    clearAnno();
+
+    await ensurePeriodNoJump(2);
+    if(token !== actionToken) return;
+
+    const tileIndex = findTileIndexForCode(code);
+    if(tileIndex < 0){
+      console.warn("Metro not found:", code);
+      return;
+    }
+
+    const L = state.matrixLayout || computeMatrixLayout();
+    state.matrixLayout = L;
+    const {tileW, tileH} = L;
+    state.tiles.forEach(t=>{
+      if(!t.centroids) extractCentroidsForTile(t, tileW, tileH);
+    });
+
+    const b = tileBounds(tileIndex);
+    const z = zoomTransformToBoundsCentered(b, 18, 1.8);
+
+    // ✅ reset opacities BEFORE any transitions (this is the actual fix)
+    hardSetOpacities(tileIndex, 0.98, 0.08);
+
+    const alreadyHere =
+      isZoomedMode() &&
+      state.currentCityCode === code &&
+      state.periodIndex === 2 &&
+      camIsAt(z);
+
+    if(alreadyHere){
+      // Also ensure we didn't inherit a wrong fade from a previous interrupted animation.
+      hardSetOpacities(tileIndex, 0.98, 0.08);
+
+      state.mode = (code === HERMOSILLO_CODE) ? "hermosilloZoom" : "metroZoom";
+      state.currentCityCode = code;
+      setHeaderStatus(CITY_LABEL[code] || code, PERIODS[state.periodIndex].label, code, state.periodIndex);
+      return;
+    }
+
+    const key = PERIODS[state.periodIndex].key;
+    const {w: viewportW, h: viewportH} = viewport();
+    const currentZoom = z.k;
+    const tile = state.tiles[tileIndex];
+
+    const currentCellData = new Map();
+    layer.selectAll(`rect.cell[data-tile="${tileIndex}"]`).each(function(d){
+      if(d && d.id) {
+        currentCellData.set(d.id, {
+          w: +d3.select(this).attr("width"),
+          h: +d3.select(this).attr("height"),
+          x: +d3.select(this).attr("x"),
+          y: +d3.select(this).attr("y")
+        });
+      }
+    });
+
+    let targetCellData = [];
+    if(tile && tile.centroids){
+      const domain = tile.domains[key];
+      const color = makeColor(domain);
+      const sizeBase = makeSizeScale(domain);
+
+      const screenBaseSize = calculateCellSize(tile.centroids.length, viewportW, viewportH, 1.0, TARGET_FILL_TILE * 2.5, 10, 50);
+      const baseSize = screenBaseSize / currentZoom;
+
+      const {cols, tileW, tileH, pad, gap} = state.matrixLayout || computeMatrixLayout();
+      const col = tileIndex % cols;
+      const row = Math.floor(tileIndex / cols);
+      const ox = pad + col*(tileW+gap);
+      const oy = pad + row*(tileH+gap);
+
+      targetCellData = tile.centroids.map(c => {
+        const v = biasNeg(raw(c, key));
+        const base = sizeBase(v);
+        const factor = (v < 0) ? SIZE_FACTOR_NEG : SIZE_FACTOR_POS;
+        const mult = (v < 0) ? NEG_SIZE_MULT : POS_SIZE_MULT;
+        const amp = 1 + (base - 1) * factor;
+        const s = baseSize * mult * Math.max(SIZE_MIN, Math.min(SIZE_MAX, amp));
+
+        return {
+          id: `m-${tileIndex}-${c._id}`,
+          tileIndex: tileIndex,
+          x: ox + c.x - s/2,
+          y: oy + c.y - s/2,
+          w: s,
+          h: s,
+          fill: color(v),
+          opacity: 0.98
+        };
+      });
+    }
+
+    // Optional: a gentle fade transition AFTER the hard reset (safe now)
+    layer.selectAll("rect.cell")
+      .transition()
+      .duration(ms(220))
+      .ease(d3.easeCubicInOut)
+      .attr("opacity", d => (d && d.tileIndex === tileIndex) ? 0.98 : 0.08);
+
+    if(targetCellData.length > 0){
+      const sel = layer.selectAll(`rect.cell[data-tile="${tileIndex}"]`).data(targetCellData, d => d.id);
+
+      sel.transition()
+        .duration(ZOOM_MS)
+        .ease(d3.easeCubicInOut)
+        .attrTween("width", function(d){
+          const current = currentCellData.get(d.id);
+          const from = current ? current.w : d.w;
+          const to = d.w;
+          return d3.interpolateNumber(from, to);
+        })
+        .attrTween("height", function(d){
+          const current = currentCellData.get(d.id);
+          const from = current ? current.h : d.h;
+          const to = d.h;
+          return d3.interpolateNumber(from, to);
+        })
+        .attrTween("x", function(d){
+          const current = currentCellData.get(d.id);
+          const from = current ? current.x : d.x;
+          const to = d.x;
+          return d3.interpolateNumber(from, to);
+        })
+        .attrTween("y", function(d){
+          const current = currentCellData.get(d.id);
+          const from = current ? current.y : d.y;
+          const to = d.y;
+          return d3.interpolateNumber(from, to);
+        })
+        .attr("fill", d => d.fill)
+        .attrTween("rx", function(d){
+          const current = currentCellData.get(d.id);
+          const fromW = current ? current.w : d.w;
+          const toW = d.w;
+          return t => {
+            const w = d3.interpolateNumber(fromW, toW)(t);
+            return Math.max(0.25, Math.min(3, w * 0.12));
+          };
+        })
+        .attrTween("ry", function(d){
+          const current = currentCellData.get(d.id);
+          const fromH = current ? current.h : d.h;
+          const toH = d.h;
+          return t => {
+            const h = d3.interpolateNumber(fromH, toH)(t);
+            return Math.max(0.25, Math.min(3, h * 0.12));
+          };
+        });
+
+      sel.enter()
+        .append("rect")
+        .attr("class", "cell")
+        .attr("data-tile", tileIndex)
+        .attr("x", d => d.x)
+        .attr("y", d => d.y)
+        .attr("width", d => d.w)
+        .attr("height", d => d.h)
+        .attr("fill", d => d.fill)
+        // ✅ never start at 0 opacity; start at the focused opacity to avoid "stuck invisible" if interrupted
+        .attr("opacity", 0.98)
+        .attr("rx", d => Math.max(0.25, Math.min(3, d.w * 0.12)))
+        .attr("ry", d => Math.max(0.25, Math.min(3, d.h * 0.12)));
+    }
+
+    await applyCam(z.tx, z.ty, z.k, true, ZOOM_MS);
+    if(token !== actionToken) return;
+
+    // Ensure final opacities are correct (in case camera end races with scroll changes)
+    hardSetOpacities(tileIndex, 0.98, 0.08);
+
+    state.mode = (code === HERMOSILLO_CODE) ? "hermosilloZoom" : "metroZoom";
+    state.currentCityCode = code;
+    setHeaderStatus(CITY_LABEL[code] || code, PERIODS[state.periodIndex].label, code, state.periodIndex);
+  }
+
+  async function backToGrid(token){
+    cancelAllAnimations();
+    clearAnno();
+
+    renderMatrix(2, false);
+    await new Promise(requestAnimationFrame);
+    if(token !== actionToken) return;
+
+    layer.selectAll("rect.cell")
+      .interrupt()
+      .attr("opacity", 0.95)
+      .transition()
+      .duration(ms(220))
+      .ease(d3.easeCubicInOut)
+      .attr("opacity", 0.95);
+
+    const layout = state.matrixLayout || computeMatrixLayout();
+    const {k} = layout;
+    const {w} = viewport();
+    // Add vertical offset to account for topbar and infoRow
+    const topOffset = 90; // Adjust this value to move grid down
+    await applyCam((w*(1-k))/2, topOffset, k, true, ms(650));
+    if(token !== actionToken) return;
+
+    state.mode = "matrix";
+    state.currentCityCode="ALL";
+    setHeaderStatus(CITY_LABEL.ALL, PERIODS[state.periodIndex].label, "ALL", state.periodIndex);
+  }
+
+  function drawHermosilloArrows(level=1){
+    clearAnno();
+    const {w,h} = viewport();
+    const cx = w*0.50, cy = h*0.56;
+
+    const targets1 = [
+      {x:w*0.82, y:h*0.36},
+      {x:w*0.20, y:h*0.33},
+    ];
+    const targets2 = [
+      {x:w*0.84, y:h*0.72},
+      ...targets1
+    ];
+    const targets = (level>=2) ? targets2 : targets1;
+
+    anno.append("circle").attr("class","annoDot").attr("r",7).attr("cx",cx).attr("cy",cy);
+    anno.append("text").attr("class","annoLabel").attr("x",cx).attr("y",cy-16).attr("text-anchor","middle").text("Centro");
+
+    targets.forEach(t=>{
+      anno.append("line")
+        .attr("class","annoLine")
+        .attr("x1",cx).attr("y1",cy)
+        .attr("x2",t.x).attr("y2",t.y)
+        .attr("marker-end","url(#arrowhead)");
+    });
+
+    anno.append("text")
+      .attr("class","annoLabel")
+      .attr("x", w*0.86)
+      .attr("y", h*0.28)
+      .attr("text-anchor","end")
+      .text("Crecimiento");
+  }
+
+  function drawConcentricMethodology(){
+    clearAnno();
+    const {w,h} = viewport();
+    const cx = w*0.50, cy = h*0.56;
+
+    const radii = [72, 140, 220];
+    const labels = ["Zona central", "Zona intermedia", "Zona lejana"];
+    // Angles for label positioning (in radians, 0 = right, π/2 = bottom, π = left, 3π/2 = top)
+    const labelAngles = [Math.PI * 0.15, Math.PI * 0.25, Math.PI * 0.35]; // Staggered angles
+
+    anno.append("circle").attr("class","annoDot").attr("r",7).attr("cx",cx).attr("cy",cy);
+    anno.append("text").attr("class","annoLabel").attr("x",cx).attr("y",cy-16).attr("text-anchor","middle").text("Centro");
+
+    radii.forEach((r,i)=>{
+      // Draw the circle ring
+      anno.append("circle").attr("class","annoRing").attr("cx",cx).attr("cy",cy).attr("r",r);
+      
+      // Create a path for the text (slightly larger radius to separate from circle line)
+      const textRadius = r + 7; // 14px offset from the circle line
+      const pathId = `circle-path-${i}`;
+      // Create two semicircle arcs to form a complete circle
+      // Start at right side (angle 0), go counterclockwise
+      const x1 = cx + textRadius;
+      const y1 = cy;
+      const x2 = cx - textRadius;
+      const y2 = cy;
+      
+      // Full circle path: M to start point, then two arcs
+      const circlePath = `M ${x1} ${y1} A ${textRadius} ${textRadius} 0 1 1 ${x2} ${y2} A ${textRadius} ${textRadius} 0 1 1 ${x1} ${y1}`;
+      
+      // Create the path element (invisible, just for textPath)
+      anno.append("path")
+        .attr("id", pathId)
+        .attr("d", circlePath)
+        .attr("fill", "none")
+        .attr("stroke", "none");
+      
+      // Calculate startOffset based on angle
+      // SVG textPath: 0% = start of path (right side), 25% = bottom, 50% = left, 75% = top
+      // labelAngles are in radians, convert to percentage
+      const startOffset = (labelAngles[i] / (2 * Math.PI)) * 100;
+      
+      // Create text that follows the circle path
+      anno.append("text")
+        .attr("class","annoRingLabel")
+        .append("textPath")
+        .attr("href", `#${pathId}`)
+        .attr("startOffset", `${startOffset}%`)
+        .attr("text-anchor", "middle")
+        .text(labels[i]);
+    });
+  }
+
+  async function runAction(action){
+    const token = ++actionToken;
+    cancelAllAnimations();
+
+    switch(action){
+      case "c1-s1":{
+        setBox("Capítulo 1",
+          "Todas las ciudades en México están perdiendo población en las zonas centrales",
+          "A primera vista, las ciudades mexicanas están más vivas que nunca. Entre los años 1990 y 2020, su población aumentó el doble, su extensión urbana se extendió y con ello sus avenidas se llenaron de autos y comercios. Sin embargo, detrás de ese dinamismo aparente se esconde un fenómeno menos visible, pues mientras se expandían, sus centros perdían habitantes. Aunque la actividad no desapareció del centro, pues aún hoy en día se concentran ahí comercios, oficinas, escuelas y servicios, su vocación habitacional se fue debilitando con el tiempo. Devinieron en zonas que permanecen activas durante el día, pero que por la noche se apagan, sugiriendo que son altamente visitadas, más no habitadas. La paradoja es que, generalmente, estas mismas zonas centrales abandonadas tienen las mejores dotaciones de equipamiento público y de acceso a transporte. Este vaciamiento no es un simple efecto secundario del crecimiento urbano, pues los centros de las ciudades mexicanas no perdieron población por azar ni por un desplazamiento espontáneo de sus residentes. Lo que ocurrió fue un proceso sistemático, inducido, resultado de decisiones de mercado, omisiones institucionales y, sobre todo, de la falta de una política de vivienda que promoviera opciones asequibles en esas áreas. Aunque este estudio no se centra en las causas, sí muestra con claridad que el fenómeno responde a dinámicas más amplias que la simple expansión territorial."
+        );
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+
+        state.periodIndex = 0;
+        setHeaderStatus(CITY_LABEL.ALL, PERIODS[0].label, "ALL", 0);
+        renderMatrix(0,true);
+        return;
+      }
+
+      case "c1-s2":{
+        setBox("Capítulo 1","El patrón se intensifica","Mientras esto sucedía, las zonas centrales —donde el suelo siempre ha sido más costoso por su cercanía al empleo y los servicios (Alonso, 1964)— dejaron de ofrecer vivienda asequible pues, en lugar de facilitar su aprovechamiento, las regulaciones y los altos costos de infraestructura encarecieron los proyectos de redensificación. A esto se sumó el rezago en movilidad, que redujo la accesibilidad y elevó aún más el costo de habitar esas áreas (Guerra & Monkkonen, 2020). Regenerar predios intraurbanos terminó siendo entonces más caro, incierto y lento que urbanizar terrenos nuevos en la periferia. Basta observar escenas cotidianas para entender el impacto de este patrón. Subir a un camión en Apodaca, Nuevo León, antes del amanecer, esperar el transporte en los fraccionamientos de Tlajomulco, Jalisco, o avanzar por calles sin banquetas en las orillas de León, Guanajuato, revelan la otra cara del crecimiento urbano: ciudades que se han expandido más allá del tejido intraurbano consolidado, hacia donde el suelo cuesta menos, pero donde todo lo demás queda lejos. En estos desarrollos dispersos —irregulares o formalmente construidos, pero desconectados— la vida cotidiana se complica. Escuelas, mercados, servicios y centros de trabajo permanecen en las zonas centrales, mientras que la vivienda se multiplicó en la periferia. Para miles de familias que ahí habitan, la distancia se mide tanto en kilómetros, como en tiempo perdido, oportunidades truncadas y energía que no alcanza. Desde la ventana del transporte público o en el tráfico detenido se percibe esta realidad fragmentada: por un lado, un núcleo central con actividad económica; por el otro, la ciudad dormitorio extensa, desconectada y extenuante. Son espacios que dan techo, pero no cercanía, tiempo ni calidad de vida.");
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+
+        state.periodIndex = 1;
+        setHeaderStatus(CITY_LABEL.ALL, PERIODS[1].label, "ALL", 1);
+        renderMatrix(1,true);
+        return;
+      }
+
+      case "c1-s3":{
+        setBox("Capítulo 1","Treinta años después","Este estudio evidencia esa paradoja al analizar 70 zonas metropolitanas mexicanas mediante una metodología de alta resolución que permite observar cómo se redistribuyó la población dentro de cada urbe, más allá de los límites municipales entre 1990 y 2020. El hallazgo central es que en todas las zonas metropolitanas se observa el mismo patrón de despoblamiento de las áreas centrales y crecimiento disperso en las periféricas, con implicaciones serias para la equidad territorial, la cohesión social, la sostenibilidad y la salud. Además, el análisis demuestra que, si las densidades urbanas de 1990 se hubieran mantenido bajo un modelo de desarrollo urbano distinto, millones de personas habrían permanecido como residentes en zonas más céntricas. La expansión habría tomado otra forma, con costos sociales, económicos y ambientales menores a los observados durante los últimos treinta años de urbanización en México.");
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL.ALL, PERIODS[2].label, "ALL", 2);
+        renderMatrix(2,true);
+        return;
+      }
+
+      case "c2-s1":{
+        setBox("Capítulo 2","¿Cómo llegamos a esto?","Hermosillo (M26.02): ejemplo para entender la expansión urbana.");
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL[HERMOSILLO_CODE], PERIODS[2].label, HERMOSILLO_CODE, 2);
+
+        if(state.currentCityCode !== HERMOSILLO_CODE || !isZoomedMode()){
+          await zoomToMetro(HERMOSILLO_CODE, token);
+        }else{
+          clearAnno();
+        }
+        return;
+      }
+
+      case "c2-s2":{
+        setBox("Capítulo 2","Flechas: dirección del crecimiento","La ciudad se expande hacia la periferia.");
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL[HERMOSILLO_CODE], PERIODS[2].label, HERMOSILLO_CODE, 2);
+
+        if(state.currentCityCode !== HERMOSILLO_CODE || !isZoomedMode()){
+          await zoomToMetro(HERMOSILLO_CODE, token);
+          if(token !== actionToken) return;
+        }
+        drawHermosilloArrows(1);
+        return;
+      }
+
+      case "c2-s3":{
+        setBox("Capítulo 2","Se repite en todo el país","Lo importante no es Hermosillo: es que la misma lógica se repite en muchas ciudades mexicanas.");
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL[HERMOSILLO_CODE], PERIODS[2].label, HERMOSILLO_CODE, 2);
+
+        if(state.currentCityCode !== HERMOSILLO_CODE || !isZoomedMode()){
+          await zoomToMetro(HERMOSILLO_CODE, token);
+          if(token !== actionToken) return;
+        }
+        drawHermosilloArrows(2);
+        return;
+      }
+
+      case "c3-s1":{
+        setBox("Capítulo 3","El sprawl nos lleva a perder población en el centro",
+          "Hermosillo como ejemplo: crecimiento hacia afuera + pérdida central.",
+          "Body Text to be developed later"
+        );
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL[HERMOSILLO_CODE], PERIODS[2].label, HERMOSILLO_CODE, 2);
+        await zoomToMetro(HERMOSILLO_CODE, token);
+        if(token !== actionToken) return;
+        drawHermosilloArrows(2);
+        return;
+      }
+
+      case "c3-s2":{
+        setBox("Capítulo 3","Sprawl → pérdida en el centro - Paso 2","Placeholder para paso 2 del capítulo 3.","Body Text to be developed later");
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL[HERMOSILLO_CODE], PERIODS[2].label, HERMOSILLO_CODE, 2);
+        if(state.currentCityCode !== HERMOSILLO_CODE || !isZoomedMode()){
+          await zoomToMetro(HERMOSILLO_CODE, token);
+          if(token !== actionToken) return;
+        }
+        drawHermosilloArrows(2);
+        return;
+      }
+
+      case "c3-s3":{
+        setBox("Capítulo 3","Sprawl → pérdida en el centro - Paso 3","Placeholder para paso 3 del capítulo 3.","Body Text to be developed later");
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL[HERMOSILLO_CODE], PERIODS[2].label, HERMOSILLO_CODE, 2);
+        if(state.currentCityCode !== HERMOSILLO_CODE || !isZoomedMode()){
+          await zoomToMetro(HERMOSILLO_CODE, token);
+          if(token !== actionToken) return;
+        }
+        drawHermosilloArrows(2);
+        return;
+      }
+
+      case "c4-s1":{
+        setBox("Capítulo 4","Metodología",
+          "Círculos concéntricos: centro, zona central, intermedia, lejana.",
+          "Body Text to be developed later"
+        );
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL[HERMOSILLO_CODE], PERIODS[2].label, HERMOSILLO_CODE, 2);
+        await zoomToMetro(HERMOSILLO_CODE, token);
+        if(token !== actionToken) return;
+        drawConcentricMethodology();
+        return;
+      }
+
+      case "c4-s2":{
+        setBox("Capítulo 4","Metodología - Paso 2","Placeholder para paso 2 del capítulo 4.","Body Text to be developed later");
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL[HERMOSILLO_CODE], PERIODS[2].label, HERMOSILLO_CODE, 2);
+        if(state.currentCityCode !== HERMOSILLO_CODE || !isZoomedMode()){
+          await zoomToMetro(HERMOSILLO_CODE, token);
+        }
+        clearAnno();
+        return;
+      }
+
+      case "c4-s3":{
+        setBox("Capítulo 4","Metodología - Paso 3","Placeholder para paso 3 del capítulo 4.","Body Text to be developed later");
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL[HERMOSILLO_CODE], PERIODS[2].label, HERMOSILLO_CODE, 2);
+        if(state.currentCityCode !== HERMOSILLO_CODE || !isZoomedMode()){
+          await zoomToMetro(HERMOSILLO_CODE, token);
+        }
+        clearAnno();
+        return;
+      }
+
+      case "c5-s1":{
+        setBox("Capítulo 5","Las zonas centrales de México pierden población",
+          "Se han perdido 2.5 millones de personas — equivalente a Hermosillo, La Paz, Chetumal, Colima y Mazatlán juntas.",
+          "Body Text to be developed later"
+        );
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL.ALL, PERIODS[2].label, "ALL", 2);
+        await backToGrid(token);
+        return;
+      }
+
+      case "c5-s2":{
+        setBox("Capítulo 5","El tamaño de la pérdida - Paso 2","Placeholder para paso 2 del capítulo 5.","Body Text to be developed later");
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL.ALL, PERIODS[2].label, "ALL", 2);
+        if(state.mode !== "matrix"){
+          await backToGrid(token);
+        }
+        clearAnno();
+        return;
+      }
+
+      case "c5-s3":{
+        setBox("Capítulo 5","El tamaño de la pérdida - Paso 3","Placeholder para paso 3 del capítulo 5.","Body Text to be developed later");
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL.ALL, PERIODS[2].label, "ALL", 2);
+        if(state.mode !== "matrix"){
+          await backToGrid(token);
+        }
+        clearAnno();
+        return;
+      }
+
+      case "c6-s1":{
+        setBox("Capítulo 6","La zona central de Mexicali perdió XX habitantes",
+          "Caso de estudio: Mexicali (reemplazar XX).","Body Text to be developed later"
+        );
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL[MEXICALI_CODE], PERIODS[2].label, MEXICALI_CODE, 2);
+        await zoomToMetro(MEXICALI_CODE, token);
+        return;
+      }
+
+      case "c6-s2":{
+        setBox("Capítulo 6","Caso: Mexicali - Paso 2","Placeholder para paso 2 del capítulo 6.","Body Text to be developed later");
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL[MEXICALI_CODE], PERIODS[2].label, MEXICALI_CODE, 2);
+        if(state.currentCityCode !== MEXICALI_CODE || !isZoomedMode()){
+          await zoomToMetro(MEXICALI_CODE, token);
+        }
+        clearAnno();
+        return;
+      }
+
+      case "c6-s3":{
+        setBox("Capítulo 6","Caso: Mexicali - Paso 3","Placeholder para paso 3 del capítulo 6.","Body Text to be developed later");
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL[MEXICALI_CODE], PERIODS[2].label, MEXICALI_CODE, 2);
+        if(state.currentCityCode !== MEXICALI_CODE || !isZoomedMode()){
+          await zoomToMetro(MEXICALI_CODE, token);
+        }
+        clearAnno();
+        return;
+      }
+
+      case "c7-s1":{
+        setBox("Capítulo 7","La zona intermedia de Guadalajara ganó XX habitantes",
+          "En todo el país las zonas intermedias ganaron XXX habitantes.","Body Text to be developed later"
+        );
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL[GUADALAJARA_CODE], PERIODS[2].label, GUADALAJARA_CODE, 2);
+        await zoomToMetro(GUADALAJARA_CODE, token);
+        return;
+      }
+
+      case "c7-s2":{
+        setBox("Capítulo 7","Caso: Guadalajara - Paso 2","Placeholder para paso 2 del capítulo 7.","Body Text to be developed later");
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL[GUADALAJARA_CODE], PERIODS[2].label, GUADALAJARA_CODE, 2);
+        if(state.currentCityCode !== GUADALAJARA_CODE || !isZoomedMode()){
+          await zoomToMetro(GUADALAJARA_CODE, token);
+        }
+        clearAnno();
+        return;
+      }
+
+      case "c7-s3":{
+        setBox("Capítulo 7","Caso: Guadalajara - Paso 3","Placeholder para paso 3 del capítulo 7.","Body Text to be developed later");
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL[GUADALAJARA_CODE], PERIODS[2].label, GUADALAJARA_CODE, 2);
+        if(state.currentCityCode !== GUADALAJARA_CODE || !isZoomedMode()){
+          await zoomToMetro(GUADALAJARA_CODE, token);
+        }
+        clearAnno();
+        return;
+      }
+
+      case "c8-s1":{
+        setBox("Capítulo 8","La zona lejana de Ciudad de México ganó XX habitantes",
+          "En todo el país las zonas lejanas ganaron XXX habitantes.","Body Text to be developed later"
+        );
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL[CDMX_CODE], PERIODS[2].label, CDMX_CODE, 2);
+        await zoomToMetro(CDMX_CODE, token);
+        return;
+      }
+
+      case "c8-s2":{
+        setBox("Capítulo 8","Caso: CDMX - Paso 2","Placeholder para paso 2 del capítulo 8.","Body Text to be developed later");
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL[CDMX_CODE], PERIODS[2].label, CDMX_CODE, 2);
+        if(state.currentCityCode !== CDMX_CODE || !isZoomedMode()){
+          await zoomToMetro(CDMX_CODE, token);
+        }
+        clearAnno();
+        return;
+      }
+
+      case "c8-s3":{
+        setBox("Capítulo 8","Caso: CDMX - Paso 3","Placeholder para paso 3 del capítulo 8.","Body Text to be developed later");
+        await buildMatrixOnce();
+        if(token !== actionToken) return;
+        state.periodIndex = 2;
+        setHeaderStatus(CITY_LABEL[CDMX_CODE], PERIODS[2].label, CDMX_CODE, 2);
+        if(state.currentCityCode !== CDMX_CODE || !isZoomedMode()){
+          await zoomToMetro(CDMX_CODE, token);
+        }
+        clearAnno();
+        return;
+      }
+
+      case "c9-s1":{
+        setBox("Capítulo 9","Pérdida de densidad","Mapa: TBD","Body Text to be developed later");
+        setHeaderStatus("—", "—", null, null);
+        clearAnno();
+        return;
+      }
+
+      case "c9-s2":{
+        setBox("Capítulo 9","Pérdida de densidad - Paso 2","Placeholder para paso 2 del capítulo 9.","Body Text to be developed later");
+        setHeaderStatus("—", "—", null, null);
+        clearAnno();
+        return;
+      }
+
+      case "c9-s3":{
+        setBox("Capítulo 9","Pérdida de densidad - Paso 3","Placeholder para paso 3 del capítulo 9.","Body Text to be developed later");
+        setHeaderStatus("—", "—", null, null);
+        clearAnno();
+        return;
+      }
+
+      case "c10-s1":{
+        setBox("Capítulo 10","¿Por qué es importante? (Call to action)","Mapa: TBD","Body Text to be developed later");
+        setHeaderStatus("—", "—", null, null);
+        clearAnno();
+        return;
+      }
+
+      case "c10-s2":{
+        setBox("Capítulo 10","¿Por qué importa? - Paso 2","Placeholder para paso 2 del capítulo 10.","Body Text to be developed later");
+        setHeaderStatus("—", "—", null, null);
+        clearAnno();
+        return;
+      }
+
+      case "c10-s3":{
+        setBox("Capítulo 10","¿Por qué importa? - Paso 3","Placeholder para paso 3 del capítulo 10.","Body Text to be developed later");
+        setHeaderStatus("—", "—", null, null);
+        clearAnno();
+        return;
+      }
+
+      default: return;
+    }
+  }
+
+  const steps = Array.from(document.querySelectorAll(".step"));
+  let lastAction = null;
+  let ticking = false;
+
+  function getActiveAction(){
+    const vh = window.innerHeight;
+    const anchorY = vh * 0.38;
+    let best = null;
+
+    for(const el of steps){
+      const r = el.getBoundingClientRect();
+      const center = r.top + r.height * 0.35;
+      const d = Math.abs(center - anchorY);
+      const visible = r.bottom > 0 && r.top < vh;
+      if(!visible) continue;
+
+      if(!best || d < best.d){
+        best = {d, action: el.getAttribute("data-action")};
+      }
+    }
+    return best ? best.action : null;
+  }
+
+  function onScroll(){
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(()=>{
+      ticking = false;
+      const action = getActiveAction();
+      if(action && action !== lastAction){
+        lastAction = action;
+        runAction(action);
+      }
+    });
+  }
+
+  window.addEventListener("scroll", onScroll, {passive:true});
+
+  /* ===== Bottom Sheet (starts CLOSED; drag handle; snaps) ===== */
+  const mapBoxEl = document.getElementById("mapBox");
+  const handleEl = document.getElementById("sheetHandle");
+
+  let sheetY = 0;
+  let dragging = false;
+  let startClientY = 0;
+  let startSheetY = 0;
+
+  let lastMoveT = 0;
+  let lastMoveY = 0;
+  let velocity = 0;
+
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+
+  function measureSheet(){
+    const h = mapBoxEl.getBoundingClientRect().height;
+    const peek = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--sheet-peek")) || 88;
+    const expandedY = 0;
+    const collapsedY = Math.max(0, h - peek);
+    const midY = Math.max(0, Math.min(collapsedY, Math.round(h * 0.42)));
+    return {h, expandedY, midY, collapsedY};
+  }
+
+  function setSheetY(y){
+    sheetY = y;
+    mapBoxEl.style.setProperty("--sheetY", `${y}px`);
+  }
+
+  function initSheetClosed(){
+    const {collapsedY} = measureSheet();
+    mapBoxEl.classList.remove("ready");
+    setSheetY(collapsedY);
+    requestAnimationFrame(()=> requestAnimationFrame(()=> mapBoxEl.classList.add("ready")));
+  }
+
+  function snapTo(yTarget){
+    const {expandedY, collapsedY} = measureSheet();
+    setSheetY(clamp(yTarget, expandedY, collapsedY));
+  }
+
+  function snapToNearest(){
+    const {expandedY, midY, collapsedY} = measureSheet();
+    const candidates = [expandedY, midY, collapsedY];
+
+    if(Math.abs(velocity) > 0.55){
+      snapTo(velocity < 0 ? expandedY : collapsedY);
+      return;
+    }
+
+    let best = candidates[0], bestD = Math.abs(sheetY - candidates[0]);
+    for(const c of candidates.slice(1)){
+      const d = Math.abs(sheetY - c);
+      if(d < bestD){ bestD = d; best = c; }
+    }
+    snapTo(best);
+  }
+
+  initSheetClosed();
+
+  handleEl.addEventListener("pointerdown", (e)=>{
+    dragging = true;
+    startClientY = e.clientY;
+    startSheetY = sheetY;
+
+    lastMoveT = performance.now();
+    lastMoveY = e.clientY;
+    velocity = 0;
+
+    handleEl.setPointerCapture(e.pointerId);
+    mapBoxEl.classList.remove("ready");
+  });
+
+  window.addEventListener("pointermove", (e)=>{
+    if(!dragging) return;
+
+    const now = performance.now();
+    const dy = e.clientY - startClientY;
+
+    const {expandedY, collapsedY} = measureSheet();
+    setSheetY(clamp(startSheetY + dy, expandedY, collapsedY));
+
+    const dt = Math.max(1, now - lastMoveT);
+    velocity = (e.clientY - lastMoveY) / dt;
+    lastMoveT = now;
+    lastMoveY = e.clientY;
+  }, {passive:true});
+
+  function endDrag(){
+    if(!dragging) return;
+    dragging = false;
+    mapBoxEl.classList.add("ready");
+    snapToNearest();
+  }
+  window.addEventListener("pointerup", endDrag, {passive:true});
+  window.addEventListener("pointercancel", endDrag, {passive:true});
+
+  handleEl.addEventListener("click", ()=>{
+    const {expandedY, collapsedY} = measureSheet();
+    const isCollapsed = sheetY > (collapsedY * 0.6);
+    mapBoxEl.classList.add("ready");
+    snapTo(isCollapsed ? expandedY : collapsedY);
+  });
+
+  window.addEventListener("resize", ()=>{
+    syncStageToTopbar();
+    setViewBox();
+    clearAnno();
+    initSheetClosed();
+
+    if(state.mode === "intro"){
+      renderIntro(state.periodIndex, false);
+    }else if(state.mode === "matrix"){
+      renderMatrix(state.periodIndex, false);
+    }else{
+      onScroll();
+    }
+  }, {passive:true});
+
+  syncStageToTopbar();
+
+  setHeaderStatus(CITY_LABEL.ALL, PERIODS[0].label, "ALL", 0);
+  await buildMatrixOnce();
+  renderIntro(0,false);
+
+  onScroll();
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+{
+  "M12.01": {
+     "name": "Acapulco",
+     "fullname": ""
+  },
+  "M01.01": {
+     "name": "Aguascal.",
+     "fullname": "Aguascalientes"
+  },
+  "M04.01": {
+     "name": "Campeche",
+     "fullname": ""
+  },
+  "M23.01": {
+     "name": "Cancún",
+     "fullname": ""
+  },
+  "M09.01": {
+     "name": "VM",
+     "fullname": "Valle de México"
+  },
+  "M06.01": {
+     "name": "Colima",
+     "fullname": ""
+  },
+  "M30.02": {
+     "name": "Coatzac.",
+     "fullname": "Coatzacoalcos"
+  },
+  "M25.01": {
+     "name": "Culiacán",
+     "fullname": ""
+  },
+  "M17.01": {
+     "name": "Cuernavaca",
+     "fullname": ""
+  },
+  "M10.01": {
+     "name": "Durango",
+     "fullname": ""
+  },
+  "M14.01": {
+     "name": "Gdl.",
+     "fullname": "Guadalajara"
+  },
+  "M26.01": {
+     "name": "Hermosillo",
+     "fullname": ""
+  },
+  "M08.01": {
+     "name": "Juárez",
+     "fullname": "Ciudad Juárez"
+  },
+  "M05.01": {
+     "name": "Laguna",
+     "fullname": "Comarca Lagunera"
+  },
+  "M03.01": {
+     "name": "La Paz",
+     "fullname": ""
+  },
+  "M11.01": {
+     "name": "León",
+     "fullname": ""
+  },
+  "M31.01": {
+     "name": "Mérida",
+     "fullname": ""
+  },
+  "M19.01": {
+     "name": "Monterrey",
+     "fullname": ""
+  },
+  "M16.02": {
+     "name": "Morelia",
+     "fullname": ""
+  },
+  "M20.01": {
+     "name": "Oaxaca",
+     "fullname": ""
+  },
+  "M13.01": {
+     "name": "Pachuca",
+     "fullname": ""
+  },
+  "M21.01": {
+     "name": "Puebla",
+     "fullname": ""
+  },
+  "M22.01": {
+     "name": "Qro.",
+     "fullname": "Querétaro"
+  },
+  "M28.01": {
+     "name": "Reynosa",
+     "fullname": ""
+  },
+  "M05.04": {
+     "name": "Saltillo",
+     "fullname": ""
+  },
+  "M24.01": {
+     "name": "SLP",
+     "fullname": "San Luis Potosí"
+  },
+  "M07.01": {
+     "name": "Tapachula",
+     "fullname": ""
+  },
+  "M28.02": {
+     "name": "Tampico",
+     "fullname": ""
+  },
+  "M18.01": {
+     "name": "Tepic",
+     "fullname": ""
+  },
+  "M29.01": {
+     "name": "Tlaxcala",
+     "fullname": ""
+  },
+  "M02.01": {
+     "name": "Tijuana",
+     "fullname": ""
+  },
+  "M07.02": {
+     "name": "Tuxtla",
+     "fullname": "Tuxtla Gutiérrez"
+  },
+  "M30.01": {
+     "name": "Veracruz",
+     "fullname": ""
+  },
+  "M27.01": {
+     "name": "Villaherm.",
+     "fullname": "Villahermosa"
+  },
+  "M32.01": {
+     "name": "Zacatecas",
+     "fullname": ""
+  }
+}
+
+ 
